@@ -296,7 +296,7 @@ textarea::placeholder{color:var(--tx3)}
       <strong>⚙️ Configuración pendiente</strong> — Para activar el tablero, sigue estos pasos:<br><br>
       1. Crea un Google Sheet en tu cuenta Google.<br>
       2. Ve a <strong>Extensiones → Apps Script</strong>, pega el script del archivo <code>apps_script.gs</code> y publícalo como app web.<br>
-      3. Copia la URL de la app web y pégala abajo en lugar de <code>TU_URL_AQUI</code> en el código fuente de este archivo (busca <code>APPS_SCRIPT_URL</code>).<br>
+      3. Copia la URL de la app web y pégala abajo en lugar de <code>https://script.google.com/macros/s/AKfycbxgST_VAVDNtx9gJJh9kivsY_LGjRLT16VI8pOIpr_EtpfmYfKROpSDJE_YxhtpqiBUGg/exec</code> en el código fuente de este archivo (busca <code>APPS_SCRIPT_URL</code>).<br>
       4. Listo — los datos se guardan automáticamente en tu Google Sheet.
     </div>
 
@@ -493,9 +493,9 @@ textarea::placeholder{color:var(--tx3)}
 
 <script>
 // ══════════════════════════════════════════════════
-//  CONFIGURACIÓN — PEGA TU URL DE APPS SCRIPT AQUÍ
+//  CONFIGURACIÓN — https://script.google.com/macros/s/AKfycbxgST_VAVDNtx9gJJh9kivsY_LGjRLT16VI8pOIpr_EtpfmYfKROpSDJE_YxhtpqiBUGg/exec
 // ══════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'TU_URL_AQUI';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgST_VAVDNtx9gJJh9kivsY_LGjRLT16VI8pOIpr_EtpfmYfKROpSDJE_YxhtpqiBUGg/exec';
 // ══════════════════════════════════════════════════
 
 const CLAVE_LIDER = '1234'; // ← Cambia esta clave
@@ -529,7 +529,7 @@ const TASKS = {
 let currentUser = null;
 let renameIdx = -1;
 let bannerTimer, noteSaveTimer;
-const IS_CONFIGURED = APPS_SCRIPT_URL !== 'TU_URL_AQUI';
+const IS_CONFIGURED = APPS_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxgST_VAVDNtx9gJJh9kivsY_LGjRLT16VI8pOIpr_EtpfmYfKROpSDJE_YxhtpqiBUGg/exec';
 
 // ─── STORAGE (Google Sheets vía Apps Script, con localStorage como fallback) ────
 async function apiCall(action, payload={}) {
