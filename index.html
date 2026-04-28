@@ -610,8 +610,7 @@ function setSyncInd(msg) {
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 async function initLogin() {
-  if (IS_CONFIGURED) {
-    document.getElementById('config-banner').style.display = 'none';
+  if (IS_CONFIGURED) {document.getElementById('config-banner').style.display = 'none';
   }
   const asesores = await getAsesores();
   const sel = document.getElementById('login-select');
