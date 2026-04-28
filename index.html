@@ -714,13 +714,26 @@ function updateMainProgress(data) {
   document.getElementById('main-fill').style.width = pct+'%';
   document.getElementById('main-pct').textContent = pct+'%';
 }
-async function toggleCheck(g, i) {
-  setSyncInd('Guardando...');
-  const data = await getAsesorData(currentUser);
-  data.checks[g][i] = !data.checks[g][i];
-  await saveAsesorData(currentUser, data);
-  await renderChecks();
-}
++async function toggleCheck(g, i) {
++  const row = document.querySelectorAll('#list-'+g+' .chk-row')[i];
++  if (!row) return;
++  const chk = row.querySelector('.chk');
++  const lbl = row.querySelector('.chk-label');
++  const isOn = chk.classList.contains('on');
++  chk.classList.toggle('on', !isOn);
++  lbl.classList.toggle('done', !isOn);
++  setSyncInd('Guardando...');
++  const data = await getAsesorData(currentUser);
++  data.checks[g][i] = !isOn;
++  const done = data.checks[g].filter(Boolean).length;
++  const total = TASKS[g].length;
++  const mf = document.getElementById('mf-'+g);
++  const mt = document.getElementById('mt-'+g);
++  if (mf) mf.style.width = Math.round(done/total*100)+'%';
++  if (mt) mt.textContent = done+'/'+total;
++  updateMainProgress(data);
++  await saveAsesorData(currentUser, data);
++}
 function scheduleNoteSave() {
   clearTimeout(noteSaveTimer);
   noteSaveTimer = setTimeout(async () => {
