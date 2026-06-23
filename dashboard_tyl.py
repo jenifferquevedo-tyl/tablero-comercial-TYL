@@ -65,15 +65,8 @@ def load_data(files: dict) -> dict:
         df_f["Vendedor"].isin(ASESORES) &
         df_f["Estado en pago"].isin(VALID_STATES)
     ].copy()
-    df_f["Fecha de la factura"] = pd.to_datetime(df_f["Fecha de la factura"])
-    df_f["semana"] = df_f["Fecha de la factura"].dt.isocalendar().week.astype(int)
-
-    # Cartera
-    df_c = pd.read_excel(files["cart"])
-    df_c = df_c[df_c["Vendedor"].isin(ASESORES)].copy()
-
-    # Visitas
-   # Facturacion
+    def load_data(files: dict) -> dict:
+    # Facturacion
     df_f = pd.read_excel(files["fact"])
     df_f.columns = df_f.columns.str.strip()
     df_f["semana"] = df_f["Iniciar"].dt.isocalendar().week.astype(int)
@@ -87,6 +80,21 @@ def load_data(files: dict) -> dict:
         df_v = pd.read_excel(files["vis"])
         df_v.columns = df_v.columns.str.strip()
         df_v["semana"] = df_v["Iniciar"].dt.isocalendar().week.astype(int)
+    except Exception:
+        df_v = pd.DataFrame(columns=["Iniciar", "Asistentes", "semana"])
+
+    # Cotizaciones
+    df_cot = pd.read_excel(files["cot"])
+    df_cot.columns = df_cot.columns.str.strip()
+    
+    if "Vendedor" in df_cot.columns:
+        df_cot = df_cot[df_cot["Vendedor"].isin(ASESORES)].copy()
+    else:
+        df_cot.columns = df_cot.columns.str.lower()
+        if "vendedor" in df_cot.columns:
+            df_cot = df_cot[df_cot["vendedor"].isin(ASESORES)].copy()
+
+    return {"fact": df_f, "cart": df_c, "vis": df_v, "cot": df_cot}
     except Exception:
         df_v = pd.DataFrame(columns=["Iniciar", "Asistentes", "semana"])
 
