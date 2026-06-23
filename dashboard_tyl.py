@@ -17,7 +17,7 @@ FILES = {
     "fact": "FACTURACION JUNIO 23 2026 (account.move).xlsx",
     "cart": "CARTERA (account.move).xlsx",
     "vis": "VISITAS JUNIO(calendar.event).xlsx",
-    "cot": "Cotizaciones crm (crm.lead)-2.xlsx"
+    "cot": "Cotizaciones crm (crm.lead)-2.xlsx",
 }
 
 @st.cache_data
