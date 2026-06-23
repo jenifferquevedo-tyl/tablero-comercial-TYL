@@ -11,7 +11,7 @@ ASESORES = [
     "Néstor Arnoldo Useche Triana",
     "Adriana Carolina Cuevas"
 ]
-
+@st.cache_data
 def load_data(files: dict) -> dict:
     # Facturacion
     df_f = pd.read_excel(files["fact"])
