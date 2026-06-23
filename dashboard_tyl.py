@@ -75,3 +75,4 @@ def apply_filters(data: dict, asesores_sel: list, semanas_sel: list) -> dict:
         
     return {"fact": fact, "cart": cart, "vis": vis, "cot": vis_cot}
 
+
