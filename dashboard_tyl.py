@@ -34,12 +34,12 @@ def load_data(files: dict) -> dict:
     df_cot = pd.read_excel(files["cot"])
     df_cot.columns = df_cot.columns.str.strip()
     
+    # Forzar a que la columna se llame 'Vendedor' si viene en minúsculas en el Excel
+    df_cot = df_cot.rename(columns={"vendedor": "Vendedor"})
+    
+    # Filtrar asesores de forma directa
     if "Vendedor" in df_cot.columns:
         df_cot = df_cot[df_cot["Vendedor"].isin(ASESORES)].copy()
-    else:
-        df_cot.columns = df_cot.columns.str.lower()
-        if "vendedor" in df_cot.columns:
-            df_cot = df_cot[df_cot["vendedor"].isin(ASESORES)].copy()
 
     return {"fact": df_f, "cart": df_c, "vis": df_v, "cot": df_cot}
 
@@ -60,9 +60,9 @@ def apply_filters(data: dict, asesores_sel: list, semanas_sel: list) -> dict:
         vis = data["vis"]
         
     if not data["cot"].empty:
-        # Validación de columna segura en filtros de cotizaciones
-        col_vendedor = "Vendedor" if "Vendedor" in data["cot"].columns else "vendedor"
-        vis_cot = data["cot"][data["cot"][col_vendedor].isin(asesores_sel)]
+        # Asegurar coincidencia exacta con el resto del tablero
+        df_cot_temp = data["cot"].rename(columns={"vendedor": "Vendedor"})
+        vis_cot = df_cot_temp[df_cot_temp["Vendedor"].isin(asesores_sel)]
     else:
         vis_cot = data["cot"]
         
