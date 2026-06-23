@@ -83,7 +83,7 @@ def load_data(files: dict) -> dict:
         df_v = pd.DataFrame(columns=["Iniciar", "Asistentes", "semana"])
 
     # Cotizaciones
-    df_cot = pd.read_excel(files["cot"])
+   df_cot = pd.read_excel(files["cot"])
     df_cot = df_cot[df_cot["Vendedor"].isin(ASESORES)].copy()
 
     return {"fact": df_f, "cart": df_c, "vis": df_v, "cot": df_cot}
