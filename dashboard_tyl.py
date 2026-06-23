@@ -11,6 +11,15 @@ ASESORES = [
     "Néstor Arnoldo Useche Triana",
     "Adriana Carolina Cuevas"
 ]
+
+# Definición de archivos directamente desde la raíz de GitHub
+FILES = {
+    "fact": "FACTURACION JUNIO 23 2026 (account.move).xlsx",
+    "cart": "CARTERA (account.move).xlsx",
+    "vis": "VISITAS JUNIO(calendar.event).xlsx",
+    "cot": "Cotizaciones crm (crm.lead)-2.xlsx"
+}
+
 @st.cache_data
 def load_data(files: dict) -> dict:
     # Facturacion
@@ -37,7 +46,6 @@ def load_data(files: dict) -> dict:
     # Forzar a que la columna se llame 'Vendedor' si viene en minúsculas en el Excel
     df_cot = df_cot.rename(columns={"vendedor": "Vendedor"})
     
-    # Filtrar asesores de forma directa
     if "Vendedor" in df_cot.columns:
         df_cot = df_cot[df_cot["Vendedor"].isin(ASESORES)].copy()
 
@@ -60,7 +68,6 @@ def apply_filters(data: dict, asesores_sel: list, semanas_sel: list) -> dict:
         vis = data["vis"]
         
     if not data["cot"].empty:
-        # Asegurar coincidencia exacta con el resto del tablero
         df_cot_temp = data["cot"].rename(columns={"vendedor": "Vendedor"})
         vis_cot = df_cot_temp[df_cot_temp["Vendedor"].isin(asesores_sel)]
     else:
