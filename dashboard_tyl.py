@@ -28,7 +28,7 @@ ASESORES = [norm(a) for a in [
     "INGRID YURLEY CHURIO PATIÑO",
     "JEISSON IVAN CHITIVA VALLEJO",
     "LUIS GABRIEL ACOSTA CIRO",
-    "NÉSTOR ARNOLDO USECHE TRIANA",
+    "N\u00c9STOR ARNOLDO USECHE TRIANA",
     "ADRIANA CAROLINA CUEVAS MONSALVE",
 ]]
 
@@ -86,30 +86,47 @@ COLOR_MAP = {norm(a): COLORS[i] for i, a in enumerate(ASESORES)}
 def load_data(files: dict) -> dict:
     # Facturación
     df_f = pd.read_excel(files["fact"])
-    df_f["Vendedor"] = df_f["Vendedor"].apply(norm)
+    df_f["Vendedor"] = df_f["Vendedor"].apply(lambda x: next((a for a in ASESORES if a.upper().strip() == norm(x).upper().strip()), norm(x)))
     df_f = df_f[
-        df_f["Vendedor"].isin([norm(a) for a in ASESORES]) &
+        df_f["Vendedor"].isin(ASESORES) &
         df_f["Estado en pago"].isin(VALID_STATES)
     ].copy()
     df_f["semana"] = df_f["Fecha de la factura"].dt.isocalendar().week.astype(int)
 
     # Cartera
     df_c = pd.read_excel(files["cart"])
-    df_c["Vendedor"] = df_c["Vendedor"].apply(norm)
-    df_c = df_c[df_c["Vendedor"].isin([norm(a) for a in ASESORES])].copy()
+    df_c["Vendedor"] = df_c["Vendedor"].apply(lambda x: next((a for a in ASESORES if a.upper().strip() == norm(x).upper().strip()), norm(x)))
+    df_c = df_c[df_c["Vendedor"].isin(ASESORES)].copy()
 
     # Visitas
     df_v = pd.read_excel(files["vis"])
     df_v["Asistentes"] = df_v["Asistentes"].apply(norm)
-    df_v = df_v[df_v["Asistentes"].isin([norm(a) for a in ASESORES])].copy()
+    # Usar coincidencia parcial para evitar problemas de encoding
+    def match_asesor(nombre):
+        if not isinstance(nombre, str): return False
+        n = nombre.upper().strip()
+        for a in ASESORES:
+            if a.upper().strip() in n or n in a.upper().strip():
+                return True
+        return False
+    df_v = df_v[df_v["Asistentes"].apply(match_asesor)].copy()
+    # Mapear al nombre exacto del ASESORES list
+    def get_asesor(nombre):
+        if not isinstance(nombre, str): return nombre
+        n = nombre.upper().strip()
+        for a in ASESORES:
+            if a.upper().strip() in n or n in a.upper().strip():
+                return a
+        return nombre
+    df_v["Asistentes"] = df_v["Asistentes"].apply(get_asesor)
     df_v["semana"] = df_v["Iniciar"].apply(
         lambda x: int(x.isocalendar()[1]) if pd.notna(x) else 0
     )
 
     # Cotizaciones (histórico completo para conversión)
     df_cot = pd.read_excel(files["cot"])
-    df_cot["Vendedor"] = df_cot["Vendedor"].apply(norm)
-    df_cot = df_cot[df_cot["Vendedor"].isin([norm(a) for a in ASESORES])].copy()
+    df_cot["Vendedor"] = df_cot["Vendedor"].apply(lambda x: next((a for a in ASESORES if a.upper().strip() == norm(x).upper().strip()), norm(x)))
+    df_cot = df_cot[df_cot["Vendedor"].isin(ASESORES)].copy()
 
     return {"fact": df_f, "cart": df_c, "vis": df_v, "cot": df_cot}
 
