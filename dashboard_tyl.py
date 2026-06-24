@@ -101,11 +101,10 @@ def load_data(files: dict) -> dict:
     # Visitas
     df_v = pd.read_excel(files["vis"])
     df_v["Asistentes"] = df_v["Asistentes"].apply(norm)
-    df_v = df_v[
-        df_v["Iniciar"].notna() &
-        df_v["Asistentes"].isin([norm(a) for a in ASESORES])
-    ].copy()
-    df_v["semana"] = df_v["Iniciar"].dt.isocalendar().week.astype(int)
+    df_v = df_v[df_v["Asistentes"].isin([norm(a) for a in ASESORES])].copy()
+    df_v["semana"] = df_v["Iniciar"].apply(
+        lambda x: int(x.isocalendar()[1]) if pd.notna(x) else 0
+    )
 
     # Cotizaciones (histórico completo para conversión)
     df_cot = pd.read_excel(files["cot"])
