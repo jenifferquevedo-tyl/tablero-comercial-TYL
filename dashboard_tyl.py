@@ -18,9 +18,19 @@ import plotly.express as px
 import streamlit as st
 
 def norm(s):
-    """Normaliza texto para comparación: NFC + strip + upper."""
+    """Normaliza texto para comparación: NFC + strip."""
     if not isinstance(s, str): return ""
-    return unicodedata.normalize("NFC", s).strip().upper()
+    return unicodedata.normalize("NFC", s).strip()
+
+# Normalize all ASESORES keys to NFC at import time
+ASESORES = [norm(a) for a in [
+    "DIANA ROSSMARY RAMIREZ RIAÑO",
+    "INGRID YURLEY CHURIO PATIÑO",
+    "JEISSON IVAN CHITIVA VALLEJO",
+    "LUIS GABRIEL ACOSTA CIRO",
+    "N\u00c9STOR ARNOLDO USECHE TRIANA",
+    "ADRIANA CAROLINA CUEVAS MONSALVE",
+]]
 
 # ──────────────────────────────────────────────────────────────
 # CONFIGURACIÓN — ajusta esta ruta a tu carpeta de Google Drive
@@ -37,14 +47,7 @@ FILES = {
 # ──────────────────────────────────────────────────────────────
 # CONSTANTES
 # ──────────────────────────────────────────────────────────────
-ASESORES = [
-    "DIANA ROSSMARY RAMIREZ RIAÑO",
-    "INGRID YURLEY CHURIO PATIÑO",
-    "JEISSON IVAN CHITIVA VALLEJO",
-    "LUIS GABRIEL ACOSTA CIRO",
-    "NÉSTOR ARNOLDO USECHE TRIANA",
-    "ADRIANA CAROLINA CUEVAS MONSALVE",
-]
+# ASESORES defined in norm() block above
 
 SHORT = {
     "DIANA ROSSMARY RAMIREZ RIAÑO":    "Diana R.",
