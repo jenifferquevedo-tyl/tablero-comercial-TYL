@@ -11,10 +11,16 @@ Ajusta GDRIVE_PATH a la ruta local de tu carpeta sincronizada con Google Drive.
 """
 
 import os
+import unicodedata
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import streamlit as st
+
+def norm(s):
+    """Normaliza texto para comparación: NFC + strip + upper."""
+    if not isinstance(s, str): return ""
+    return unicodedata.normalize("NFC", s).strip().upper()
 
 # ──────────────────────────────────────────────────────────────
 # CONFIGURACIÓN — ajusta esta ruta a tu carpeta de Google Drive
@@ -65,7 +71,10 @@ SEMANA_LABELS  = {23: "Sem 23 (2–8 jun)", 24: "Sem 24 (9–15 jun)",
                   25: "Sem 25 (16–22 jun)", 26: "Sem 26 (23 jun)"}
 
 COLORS = ["#378ADD", "#1D9E75", "#7F77DD", "#D85A30", "#BA7517", "#D4537E"]
-COLOR_MAP = {a: COLORS[i] for i, a in enumerate(ASESORES)}
+ASESORES_NORM = [norm(a) for a in ASESORES]
+SHORT_NORM = {norm(k): v for k, v in SHORT.items()}
+METAS_NORM = {norm(k): v for k, v in METAS.items()}
+COLOR_MAP = {norm(a): COLORS[i] for i, a in enumerate(ASESORES)}
 
 # ──────────────────────────────────────────────────────────────
 # CARGA Y TRANSFORMACIÓN DE DATOS
@@ -74,42 +83,47 @@ COLOR_MAP = {a: COLORS[i] for i, a in enumerate(ASESORES)}
 def load_data(files: dict) -> dict:
     # Facturación
     df_f = pd.read_excel(files["fact"])
+    df_f["Vendedor"] = df_f["Vendedor"].apply(norm)
     df_f = df_f[
-        df_f["Vendedor"].isin(ASESORES) &
+        df_f["Vendedor"].isin([norm(a) for a in ASESORES]) &
         df_f["Estado en pago"].isin(VALID_STATES)
     ].copy()
     df_f["semana"] = df_f["Fecha de la factura"].dt.isocalendar().week.astype(int)
 
     # Cartera
     df_c = pd.read_excel(files["cart"])
-    df_c = df_c[df_c["Vendedor"].isin(ASESORES)].copy()
+    df_c["Vendedor"] = df_c["Vendedor"].apply(norm)
+    df_c = df_c[df_c["Vendedor"].isin([norm(a) for a in ASESORES])].copy()
 
     # Visitas
     df_v = pd.read_excel(files["vis"])
+    df_v["Asistentes"] = df_v["Asistentes"].apply(norm)
     df_v = df_v[
         df_v["Iniciar"].notna() &
-        df_v["Asistentes"].isin(ASESORES)
+        df_v["Asistentes"].isin([norm(a) for a in ASESORES])
     ].copy()
     df_v["semana"] = df_v["Iniciar"].dt.isocalendar().week.astype(int)
 
     # Cotizaciones (histórico completo para conversión)
     df_cot = pd.read_excel(files["cot"])
-    df_cot = df_cot[df_cot["Vendedor"].isin(ASESORES)].copy()
+    df_cot["Vendedor"] = df_cot["Vendedor"].apply(norm)
+    df_cot = df_cot[df_cot["Vendedor"].isin([norm(a) for a in ASESORES])].copy()
 
     return {"fact": df_f, "cart": df_c, "vis": df_v, "cot": df_cot}
 
 
 def apply_filters(data: dict, asesores_sel: list, semanas_sel: list) -> dict:
+    asesores_norm = [norm(a) for a in asesores_sel]
     fact = data["fact"][
-        data["fact"]["Vendedor"].isin(asesores_sel) &
+        data["fact"]["Vendedor"].isin(asesores_norm) &
         data["fact"]["semana"].isin(semanas_sel)
     ]
-    cart = data["cart"][data["cart"]["Vendedor"].isin(asesores_sel)]
+    cart = data["cart"][data["cart"]["Vendedor"].isin(asesores_norm)]
     vis  = data["vis"][
-        data["vis"]["Asistentes"].isin(asesores_sel) &
+        data["vis"]["Asistentes"].isin(asesores_norm) &
         data["vis"]["semana"].isin(semanas_sel)
     ]
-    cot  = data["cot"][data["cot"]["Vendedor"].isin(asesores_sel)]
+    cot  = data["cot"][data["cot"]["Vendedor"].isin(asesores_norm)]
     return {"fact": fact, "cart": cart, "vis": vis, "cot": cot}
 
 
@@ -117,7 +131,7 @@ def calc_kpis(filt: dict, asesores_sel: list, semanas_sel: list) -> dict:
     # Facturación
     tot_fact = filt["fact"]["Total"].sum()
     n_sem    = len(semanas_sel)
-    tot_meta = sum(METAS[a] * (n_sem / 4) for a in asesores_sel)
+    tot_meta = sum(METAS_NORM.get(norm(a),0) * (n_sem / 4) for a in asesores_sel)
     pct_meta = (tot_fact / tot_meta * 100) if tot_meta else 0
 
     # Cartera
@@ -160,9 +174,9 @@ def chart_fact_vs_meta(fact_df, asesores_sel, semanas_sel):
     rows = []
     n_sem = len(semanas_sel)
     for a in asesores_sel:
-        f = fact_df[fact_df["Vendedor"] == a]["Total"].sum()
-        m = METAS[a] * (n_sem / 4)
-        rows.append({"Asesor": SHORT[a], "Facturación": f, "Meta": m, "_color": COLOR_MAP[a]})
+        f = fact_df[fact_df["Vendedor"] == norm(a)]["Total"].sum()
+        m = METAS_NORM.get(norm(a),0) * (n_sem / 4)
+        rows.append({"Asesor": SHORT_NORM.get(norm(a), a), "Facturación": f, "Meta": m, "_color": COLOR_MAP.get(norm(a), "#888")})
     df = pd.DataFrame(rows)
 
     fig = go.Figure()
@@ -205,7 +219,7 @@ def chart_tendencia_semanal(fact_df, asesores_sel, semanas_sel):
         fig.add_scatter(
             x=df["semana"], y=df["Total"],
             mode="lines+markers",
-            name=SHORT[a],
+            name=SHORT_NORM.get(norm(a), a),
             line=dict(color=COLOR_MAP[a], width=2),
             marker=dict(size=6, color=COLOR_MAP[a], line=dict(color="white", width=1.5)),
         )
@@ -224,9 +238,9 @@ def chart_tendencia_semanal(fact_df, asesores_sel, semanas_sel):
 def chart_cartera(cart_df, asesores_sel):
     rows = []
     for a in asesores_sel:
-        pend = cart_df[cart_df["Vendedor"] == a]["Importe pendiente firmado"].sum()
+        pend = cart_df[cart_df["Vendedor"] == norm(a)]["Importe pendiente firmado"].sum()
         if pend > 0:
-            rows.append({"Asesor": SHORT[a], "Pendiente": pend, "_color": COLOR_MAP[a]})
+            rows.append({"Asesor": SHORT_NORM.get(norm(a), a), "Pendiente": pend, "_color": COLOR_MAP.get(norm(a), "#888")})
     if not rows:
         return None
     df = pd.DataFrame(rows).sort_values("Pendiente", ascending=True)
@@ -253,7 +267,7 @@ def chart_cartera(cart_df, asesores_sel):
 def chart_conversion(cot_df, asesores_sel):
     rows = []
     for a in asesores_sel:
-        sub = cot_df[cot_df["Vendedor"] == a]
+        sub = cot_df[cot_df["Vendedor"] == norm(a)]
         closed = sub[sub["Etapa"].isin(CLOSED_STAGES)]
         ganadas  = (closed["Etapa"] == "Ganado Terminado").sum()
         perdidas = (closed["Etapa"] != "Ganado Terminado").sum()
@@ -315,7 +329,7 @@ def tabla_visitas(vis_df, asesores_sel, semanas_sel):
     n_sem = len(semanas_sel)
     rows = []
     for a in asesores_sel:
-        total = vis_df[vis_df["Asistentes"] == a].shape[0]
+        total = vis_df[vis_df["Asistentes"] == norm(a)].shape[0]
         avg   = total / n_sem if n_sem else 0
         cumple = "✅ Cumple" if avg >= 3 else "🔴 Bajo"
         rows.append({
@@ -331,38 +345,38 @@ def tabla_alertas(filt, asesores_sel, semanas_sel):
     n_sem = len(semanas_sel)
     alertas = []
     for a in asesores_sel:
-        fact_a   = filt["fact"][filt["fact"]["Vendedor"] == a]["Total"].sum()
-        meta_a   = METAS[a] * (n_sem / 4)
+        fact_a   = filt["fact"][filt["fact"]["Vendedor"] == norm(a)]["Total"].sum()
+        meta_a   = METAS_NORM.get(norm(a), 0) * (n_sem / 4)
         pct_a    = fact_a / meta_a * 100 if meta_a else 0
         vis_tot  = filt["vis"][filt["vis"]["Asistentes"] == a].shape[0]
         avg_vis  = vis_tot / n_sem if n_sem else 0
-        pend_a   = filt["cart"][filt["cart"]["Vendedor"] == a]["Importe pendiente firmado"].sum()
-        cot_a    = filt["cot"][filt["cot"]["Vendedor"] == a]
+        pend_a   = filt["cart"][filt["cart"]["Vendedor"] == norm(a)]["Importe pendiente firmado"].sum()
+        cot_a    = filt["cot"][filt["cot"]["Vendedor"] == norm(a)]
         closed_a = cot_a[cot_a["Etapa"].isin(CLOSED_STAGES)]
         ganadas  = (closed_a["Etapa"] == "Ganado Terminado").sum()
         cerradas = len(closed_a)
         tasa_a   = ganadas / cerradas * 100 if cerradas else 0
 
         if pct_a < 30:
-            alertas.append({"Asesor": SHORT[a], "Tipo": "🔴 Facturación crítica",
+            alertas.append({"Asesor": SHORT_NORM.get(norm(a),a), "Tipo": "🔴 Facturación crítica",
                              "Detalle": f"{pct_a:.0f}% de meta ({fmt_m(fact_a)} / {fmt_m(meta_a)})"})
         elif pct_a < 70:
-            alertas.append({"Asesor": SHORT[a], "Tipo": "🟡 Facturación baja",
+            alertas.append({"Asesor": SHORT_NORM.get(norm(a),a), "Tipo": "🟡 Facturación baja",
                              "Detalle": f"{pct_a:.0f}% de meta — debe acelerar cierres"})
 
         if avg_vis == 0:
-            alertas.append({"Asesor": SHORT[a], "Tipo": "🔴 Sin visitas",
+            alertas.append({"Asesor": SHORT_NORM.get(norm(a),a), "Tipo": "🔴 Sin visitas",
                              "Detalle": "Ninguna visita registrada en el periodo"})
         elif avg_vis < 3:
-            alertas.append({"Asesor": SHORT[a], "Tipo": "🟡 Visitas bajas",
+            alertas.append({"Asesor": SHORT_NORM.get(norm(a),a), "Tipo": "🟡 Visitas bajas",
                              "Detalle": f"{avg_vis:.1f}/sem — meta mín. 3/sem"})
 
         if pend_a > 20_000_000:
-            alertas.append({"Asesor": SHORT[a], "Tipo": "🟡 Cartera alta",
+            alertas.append({"Asesor": SHORT_NORM.get(norm(a),a), "Tipo": "🟡 Cartera alta",
                              "Detalle": f"{fmt_m(pend_a)} pendiente de recaudo"})
 
         if tasa_a < 50:
-            alertas.append({"Asesor": SHORT[a], "Tipo": "🟡 Conversión baja",
+            alertas.append({"Asesor": SHORT_NORM.get(norm(a),a), "Tipo": "🟡 Conversión baja",
                              "Detalle": f"Tasa histórica {tasa_a:.0f}% (meta ≥ 50%)"})
 
     return pd.DataFrame(alertas) if alertas else pd.DataFrame(
@@ -419,7 +433,7 @@ def main():
 
         asesor_opt = ["Todos"] + ASESORES
         sel_asesor = st.selectbox("Asesor", asesor_opt,
-                                  format_func=lambda x: "Todos los asesores" if x == "Todos" else SHORT.get(x, x))
+                                  format_func=lambda x: "Todos los asesores" if x == "Todos" else SHORT_NORM.get(norm(x), x))
 
         semana_opts = list(SEMANA_LABELS.items())  # [(23, label), ...]
         sel_semanas = st.multiselect(
