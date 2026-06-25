@@ -92,6 +92,8 @@ def load_data(files: dict) -> dict:
         df_f["Estado en pago"].isin(VALID_STATES)
     ].copy()
     df_f["semana"] = df_f["Fecha de la factura"].dt.isocalendar().week.astype(int)
+    # Usar valor SIN IVA como base de facturación
+    df_f["Total"] = df_f["Importe sin impuestos en la moneda firmada"]
 
     # Cartera
     df_c = pd.read_excel(files["cart"])
@@ -411,6 +413,8 @@ def main():
         page_icon="📊",
         layout="wide",
     )
+    # Suppress deprecation warnings
+    st.config.set_option('deprecation.showPyplotGlobalUse', False)
 
     # CSS mínimo para afinar tipografía y quitar padding extra
     st.markdown("""
