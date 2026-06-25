@@ -65,11 +65,11 @@ FILES = {
 
 # ── CARGA DE DATOS ────────────────────────────────────────────────────────
 def match_name(nombre, lista):
-    """Devuelve el nombre de lista que coincide con nombre (case/accent insensitive)."""
+    """Compara ignorando tildes: NESTOR == NÉSTOR (Odoo exporta inconsistente)."""
     if not isinstance(nombre, str): return None
-    n = norm(nombre).upper()
+    n = strip_accents(norm(nombre)).upper()
     for a in lista:
-        if norm(a).upper() == n:
+        if strip_accents(norm(a)).upper() == n:
             return a
     return None
 
