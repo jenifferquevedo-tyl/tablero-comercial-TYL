@@ -9,6 +9,10 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # ── CONSTANTES ────────────────────────────────────────────────────────────
+def strip_accents(s):
+    return "".join(c for c in unicodedata.normalize("NFD", s)
+                   if unicodedata.category(c) != "Mn")
+
 def norm(s):
     if not isinstance(s, str): return ""
     return unicodedata.normalize("NFC", str(s)).strip()
